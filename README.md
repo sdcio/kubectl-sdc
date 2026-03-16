@@ -4,6 +4,20 @@
 
 kubectl-sdc is the SDC specific kubectl plugin.
 
+## installation
+
+### option 1: github release artifacts
+Download the prebuilt `kubectl-sdc` binary from the GitHub Releases page and place it in your `PATH`.
+
+### option 2: go install (alternative)
+If you prefer building from source, install directly from the module:
+
+```bash
+go install github.com/sdcio/kubectl-sdc/cmd/kubectl-sdc@main
+```
+
+This places the binary in `$(go env GOPATH)/bin` (or `$(go env GOBIN)` if set), so ensure that directory is in your `PATH`.
+
 ## notes
 - Commands use the current kubectl config to access the cluster and namespace.
 - `runningconfig` connects to `sdc-system/data-server` via port-forward.
@@ -129,14 +143,13 @@ Flags:
 - `--preview`: show preview panel in interactive mode.
 - `--query`: initial fuzzy finder query in interactive mode.
 - `--select-path-prefix`: mark matching path prefixes as selected in interactive mode. Can be repeated.
-- `--auto-accept-select-path-prefix`: automatically confirm selected path prefixes in interactive mode.
 
-`--revert` can be used with `--target`, `--deviation`, or both, and is compatible with `--preview`.
+`--revert` can be used with `--target`, `--deviation`, or both.
 
 Mode behavior:
 - Non-interactive (default): output all deviations after applying `--filter-path`.
-- Interactive (`--interactive`): choose deviations in fuzzy finder; `--select-path-prefix` and `--query` apply here.
-- `--select-path-prefix` and `--auto-accept-select-path-prefix` require `--interactive`.
+- Interactive (`--interactive`): choose deviations in fuzzy finder.
+- `--query`, `--preview`, and `--select-path-prefix` require `--interactive`.
 
 Selection notes:
 - The preview shows the actual and desired value for the currently selected path.
@@ -158,7 +171,6 @@ Flag overview:
 | `--interactive` | Interactive | Open fuzzy finder selection UI |
 | `--filter-path` | Both | Filter deviation paths by prefix before selection/output |
 | `--select-path-prefix` | Interactive | Mark matching path prefixes as selected |
-| `--auto-accept-select-path-prefix` | Interactive | Auto-confirm when `--select-path-prefix` matches |
 | `--query` | Interactive | Seed fuzzy finder with an initial query |
 | `--preview` | Interactive | Show details preview panel |
 | `--revert` | Both | Clear final selected/output deviations on target |
@@ -178,9 +190,9 @@ Example (start the interactive view with an initial query):
 kubectl sdc deviation --target srl1 --interactive --query interface
 ```
 
-Example (interactive with selected path prefixes and auto-accept):
+Example (interactive with selected path prefixes):
 ```bash
-kubectl sdc deviation --target srl1 --interactive --select-path-prefix /interface --auto-accept-select-path-prefix
+kubectl sdc deviation --target srl1 --interactive --select-path-prefix /interface
 ```
 
 Example (render selected deviations as a `TargetClearDeviation` manifest):

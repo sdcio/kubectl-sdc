@@ -9,11 +9,10 @@ type DeviationOptions struct {
 	// preview show the preview pane
 	preview bool
 	// revert the selected entries
-	revert                     bool
-	initialQuery               string
-	selectPathPrefix           []string
-	filterPath                 []string
-	autoAcceptSelectPathPrefix bool
+	revert           bool
+	initialQuery     string
+	selectPathPrefix []string
+	filterPath       []string
 }
 
 type DeviationOptionSetter func(d *DeviationOptions)
@@ -64,10 +63,6 @@ func (d *DeviationOptions) InitialQuery() string {
 	return d.initialQuery
 }
 
-func (d *DeviationOptions) AutoAcceptSelectPathPrefix() bool {
-	return d.autoAcceptSelectPathPrefix
-}
-
 // Option setters
 func WithPreview(b bool) DeviationOptionSetter {
 	return func(d *DeviationOptions) {
@@ -114,11 +109,5 @@ func WithSelectPathPrefix(prefixes []string) DeviationOptionSetter {
 func WithFilterPath(prefixes []string) DeviationOptionSetter {
 	return func(d *DeviationOptions) {
 		d.filterPath = prefixes
-	}
-}
-
-func WithAutoAcceptSelectPathPrefix(autoAccept bool) DeviationOptionSetter {
-	return func(d *DeviationOptions) {
-		d.autoAcceptSelectPathPrefix = autoAccept
 	}
 }

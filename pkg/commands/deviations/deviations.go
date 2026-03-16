@@ -153,9 +153,6 @@ func buildInteractiveFinderOptions(deviations types.DeviationSlice, allDeviation
 			}
 			return false
 		}))
-		if do.AutoAcceptSelectPathPrefix() {
-			opts = append(opts, fuzzyfinder.WithAutoAcceptPreselected())
-		}
 	}
 
 	return opts

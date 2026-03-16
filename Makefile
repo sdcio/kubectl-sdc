@@ -1,6 +1,6 @@
 .PHONY: build
 build:
-	CGO_ENABLED=0 go build -o kubectl-sdc ./cmd/kubectl-sdc.go 
+	CGO_ENABLED=0 go build ./cmd/kubectl-sdc
 
 .PHONY: go-tests
 go-tests:

@@ -30,16 +30,15 @@ import (
 
 // DeviationOptions defines raw options for the deviation command as provided by the user via cobra flags
 type DeviationOptions struct {
-	target                     string
-	deviation                  string
-	format                     string
-	interactive                bool
-	preview                    bool
-	revert                     bool
-	initialQuery               string
-	selectPathPrefix           []string
-	filterPath                 []string
-	autoAcceptSelectPathPrefix bool
+	target           string
+	deviation        string
+	format           string
+	interactive      bool
+	preview          bool
+	revert           bool
+	initialQuery     string
+	selectPathPrefix []string
+	filterPath       []string
 	GenericOptions
 }
 
@@ -82,9 +81,6 @@ func (o *DeviationOptions) Validate() error {
 	if !o.interactive && len(o.selectPathPrefix) > 0 {
 		return fmt.Errorf("--select-path-prefix requires --interactive")
 	}
-	if !o.interactive && o.autoAcceptSelectPathPrefix {
-		return fmt.Errorf("--auto-accept-select-path-prefix requires --interactive")
-	}
 	if _, err := parseDeviationOutputFormat(o.format); err != nil {
 		return err
 	}
@@ -107,7 +103,6 @@ func (o *DeviationOptions) Run(_ *cobra.Command) error {
 		deviations.WithInitialQuery(o.initialQuery),
 		deviations.WithSelectPathPrefix(o.selectPathPrefix),
 		deviations.WithFilterPath(o.filterPath),
-		deviations.WithAutoAcceptSelectPathPrefix(o.autoAcceptSelectPathPrefix),
 	}
 
 	// Run the deviation selection
@@ -165,7 +160,6 @@ func NewCmdDeviation(streams genericiooptions.IOStreams) (*cobra.Command, error)
 	cmd.Flags().BoolVar(&o.interactive, "interactive", false, "enable interactive fuzzy finder selection")
 	cmd.Flags().StringSliceVar(&o.selectPathPrefix, "select-path-prefix", nil, "mark matching path prefixes as selected in interactive mode")
 	cmd.Flags().StringSliceVar(&o.filterPath, "filter-path", nil, "filter deviation paths by prefix before selection")
-	cmd.Flags().BoolVar(&o.autoAcceptSelectPathPrefix, "auto-accept-select-path-prefix", false, "automatically confirm selected path prefixes in interactive mode")
 	cmd.Flags().StringVar(&o.format, "format", string(deviationOutputFormatText), fmt.Sprintf("output format (%s)", deviationOutputFormatListString()))
 	cmd.Flags().BoolVar(&o.preview, "preview", false, "show preview of deviations")
 	cmd.Flags().BoolVar(&o.revert, "revert", false, "revert deviations")

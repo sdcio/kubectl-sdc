@@ -120,13 +120,6 @@ func TestRun_NoSelectionReturnsNilInteractive(t *testing.T) {
 	}
 }
 
-func TestNewDeviationOptions_AutoAcceptSelectPathPrefix(t *testing.T) {
-	do := NewDeviationOptions("default", WithAutoAcceptSelectPathPrefix(true))
-	if !do.AutoAcceptSelectPathPrefix() {
-		t.Fatal("AutoAcceptSelectPathPrefix() = false, want true")
-	}
-}
-
 func TestNewDeviationOptions_PreselectSlice(t *testing.T) {
 	want := []string{"/system/name", "/system/location"}
 	do := NewDeviationOptions("default", WithSelectPathPrefix(want))
@@ -148,14 +141,14 @@ func TestNewDeviationOptions_FilterPathSlice(t *testing.T) {
 	}
 }
 
-func TestRun_AutoAcceptSelectPathPrefixOptionWiring(t *testing.T) {
+func TestRun_SelectPathPrefixOptionWiring(t *testing.T) {
 	tests := []struct {
 		name       string
 		options    []DeviationOptionSetter
 		wantOptLen int
 	}{
 		{
-			name: "disabled with preselect",
+			name: "with preselect",
 			options: []DeviationOptionSetter{
 				WithTarget("target-1"),
 				WithInteractive(true),
@@ -164,23 +157,12 @@ func TestRun_AutoAcceptSelectPathPrefixOptionWiring(t *testing.T) {
 			wantOptLen: 5,
 		},
 		{
-			name: "enabled without preselect",
+			name: "without preselect",
 			options: []DeviationOptionSetter{
 				WithTarget("target-1"),
 				WithInteractive(true),
-				WithAutoAcceptSelectPathPrefix(true),
 			},
 			wantOptLen: 4,
-		},
-		{
-			name: "enabled with preselect",
-			options: []DeviationOptionSetter{
-				WithTarget("target-1"),
-				WithInteractive(true),
-				WithSelectPathPrefix([]string{"/system"}),
-				WithAutoAcceptSelectPathPrefix(true),
-			},
-			wantOptLen: 6,
 		},
 	}
 

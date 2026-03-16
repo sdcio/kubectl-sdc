@@ -13,15 +13,14 @@ import (
 
 func TestDeviationOptionsValidate(t *testing.T) {
 	tests := []struct {
-		name                       string
-		target                     string
-		deviation                  string
-		format                     string
-		interactive                bool
-		selectPathPrefix           []string
-		autoAcceptSelectPathPrefix bool
-		namespace                  string
-		wantErr                    string
+		name             string
+		target           string
+		deviation        string
+		format           string
+		interactive      bool
+		selectPathPrefix []string
+		namespace        string
+		wantErr          string
 	}{
 		{
 			name:      "requires target or deviation",
@@ -68,25 +67,16 @@ func TestDeviationOptionsValidate(t *testing.T) {
 			selectPathPrefix: []string{"/system"},
 			wantErr:          "--select-path-prefix requires --interactive",
 		},
-		{
-			name:                       "auto accept requires interactive",
-			deviation:                  "dev-1",
-			format:                     string(deviationOutputFormatText),
-			namespace:                  "default",
-			autoAcceptSelectPathPrefix: true,
-			wantErr:                    "--auto-accept-select-path-prefix requires --interactive",
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := &DeviationOptions{
-				target:                     tt.target,
-				deviation:                  tt.deviation,
-				format:                     tt.format,
-				interactive:                tt.interactive,
-				selectPathPrefix:           tt.selectPathPrefix,
-				autoAcceptSelectPathPrefix: tt.autoAcceptSelectPathPrefix,
+				target:           tt.target,
+				deviation:        tt.deviation,
+				format:           tt.format,
+				interactive:      tt.interactive,
+				selectPathPrefix: tt.selectPathPrefix,
 				GenericOptions: GenericOptions{
 					namespace: tt.namespace,
 				},
@@ -127,21 +117,6 @@ func TestDeviationOutputFormat_DefaultAndCompletion(t *testing.T) {
 	}
 	if len(comps) != len(deviationOutputFormats) {
 		t.Fatalf("completion count = %d, want %d", len(comps), len(deviationOutputFormats))
-	}
-}
-
-func TestDeviationAutoAcceptSelectPathPrefixFlag_Default(t *testing.T) {
-	cmd, err := NewCmdDeviation(genericiooptions.NewTestIOStreamsDiscard())
-	if err != nil {
-		t.Fatalf("NewCmdDeviation() unexpected error: %v", err)
-	}
-
-	flag := cmd.Flags().Lookup("auto-accept-select-path-prefix")
-	if flag == nil {
-		t.Fatal("auto-accept-select-path-prefix flag not registered")
-	}
-	if got := flag.DefValue; got != "false" {
-		t.Fatalf("default auto-accept-select-path-prefix = %q, want %q", got, "false")
 	}
 }
 
