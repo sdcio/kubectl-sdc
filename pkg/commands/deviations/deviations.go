@@ -8,10 +8,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	fuzzyfinder "github.com/ktr0731/go-fuzzyfinder"
 	"github.com/sdcio/config-server/apis/config/v1alpha1"
 	"github.com/sdcio/kubectl-sdc/pkg/client"
 	"github.com/sdcio/kubectl-sdc/pkg/types"
+	fuzzyfinder "github.com/steiler/go-fuzzyfinder"
 )
 
 // findDeviationIndexes wraps fuzzyfinder multi-select so tests can inject selections deterministically.

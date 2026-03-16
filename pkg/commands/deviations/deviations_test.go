@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	fuzzyfinder "github.com/ktr0731/go-fuzzyfinder"
 	v1alpha1 "github.com/sdcio/config-server/apis/config/v1alpha1"
 	mockdeviations "github.com/sdcio/kubectl-sdc/mocks/deviations"
 	"github.com/sdcio/kubectl-sdc/pkg/types"
+	fuzzyfinder "github.com/steiler/go-fuzzyfinder"
 	"go.uber.org/mock/gomock"
 )
 

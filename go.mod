@@ -4,16 +4,14 @@ module github.com/sdcio/kubectl-sdc
 
 go 1.25.0
 
-replace github.com/ktr0731/go-fuzzyfinder => github.com/steiler/go-fuzzyfinder v0.3.0
-
 require (
 	github.com/beevik/etree v1.6.0
 	github.com/fatih/color v1.18.0
-	github.com/ktr0731/go-fuzzyfinder v0.9.0
 	github.com/sdcio/config-server v0.0.56-0.20260306131400-036f632d2a7b
 	github.com/sdcio/sdc-protos v0.0.51-0.20260312105324-fdf21a9d8280
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
+	github.com/steiler/go-fuzzyfinder v0.4.0
 	go.uber.org/mock v0.6.0
 	google.golang.org/grpc v1.79.2
 	google.golang.org/protobuf v1.36.11
@@ -81,6 +79,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/ktr0731/go-ansisgr v0.1.0 // indirect
+	github.com/ktr0731/go-fuzzyfinder v0.9.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect

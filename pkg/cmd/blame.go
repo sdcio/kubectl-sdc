@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
-	fuzzyfinder "github.com/ktr0731/go-fuzzyfinder"
 	"github.com/spf13/cobra"
+	fuzzyfinder "github.com/steiler/go-fuzzyfinder"
 
 	"github.com/sdcio/kubectl-sdc/pkg/client"
 	"github.com/sdcio/kubectl-sdc/pkg/commands/blame"

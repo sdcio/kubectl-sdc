@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	fuzzyfinder "github.com/ktr0731/go-fuzzyfinder"
 	"github.com/sdcio/kubectl-sdc/pkg/commands/blame"
 	"github.com/spf13/cobra"
+	fuzzyfinder "github.com/steiler/go-fuzzyfinder"
 	"k8s.io/cli-runtime/pkg/genericiooptions"
 )
 
