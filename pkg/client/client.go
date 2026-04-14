@@ -185,7 +185,7 @@ func (c *ConfigClient) ClearTargetDeviations(ctx context.Context, resource *v1al
 	result := restClient.
 		Post().
 		Namespace(resource.Namespace).
-		Resource("targets").
+		Resource(v1alpha1.TargetKind).
 		Name(resource.Name).
 		SubResource(resource.SubResourceName()).
 		Body(resource).
