@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 
+	v1Config "github.com/sdcio/config-server/apis/config"
 	"github.com/sdcio/config-server/apis/config/v1alpha1"
 	configCR "github.com/sdcio/config-server/pkg/generated/clientset/versioned"
 	"github.com/sdcio/kubectl-sdc/pkg/types"
@@ -185,7 +186,7 @@ func (c *ConfigClient) ClearTargetDeviations(ctx context.Context, resource *v1al
 	result := restClient.
 		Post().
 		Namespace(resource.Namespace).
-		Resource(v1alpha1.TargetKind).
+		Resource(v1Config.TargetPlural).
 		Name(resource.Name).
 		SubResource(resource.SubResourceName()).
 		Body(resource).
