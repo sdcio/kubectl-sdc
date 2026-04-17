@@ -19,7 +19,7 @@ func TestRunningConfigOptionsValidate(t *testing.T) {
 	}{
 		{name: "requires target", namespace: "default", wantErr: "target not set"},
 		{name: "requires namespace", target: "srl1", wantErr: "namespace not set"},
-		{name: "invalid format", target: "srl1", namespace: "default", formatStr: "bogus", wantErr: `invalid format "bogus", must be one of: json, json-ietf, xml, xpath, yaml`},
+		{name: "invalid format", target: "srl1", namespace: "default", formatStr: "bogus", wantErr: `invalid format "bogus", must be one of: json, json_ietf, xml, xpath, yaml`},
 		{name: "valid format", target: "srl1", namespace: "default", formatStr: "yaml", want: client.FormatYAML},
 	}
 
@@ -61,8 +61,9 @@ func TestNewCmdRunningConfig_DefaultFormat(t *testing.T) {
 	if flag == nil {
 		t.Fatal("format flag not registered")
 	}
-	if got := flag.DefValue; got != string(client.FormatXPath) {
-		t.Fatalf("default format = %q, want %q", got, client.FormatXPath)
+	expectFormat := client.FormatYAML
+	if got := flag.DefValue; got != string(expectFormat) {
+		t.Fatalf("default format = %q, want %q", got, expectFormat)
 	}
 }
 

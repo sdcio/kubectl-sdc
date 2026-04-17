@@ -194,3 +194,30 @@ func (c *ConfigClient) ClearTargetDeviations(ctx context.Context, resource *v1al
 
 	return result.Error()
 }
+
+func (c *ConfigClient) GetRunningConfig(ctx context.Context, namespace string, name string, format Format) (*v1alpha1.TargetRunningConfig, error) {
+	restClient := c.c.ConfigV1alpha1().RESTClient()
+
+	obj := &v1alpha1.TargetRunningConfig{}
+
+	apiReq := restClient.
+		Get().
+		Namespace(namespace).
+		Resource(v1Config.TargetPlural).
+		Name(name).
+		SubResource(v1Config.SubResource_RunningConfig).
+		Param("format", string(format)) // TODO: this should become more enum like in the future, but for now we just assume the server will handle it correctly
+
+	apiResult := apiReq.Do(ctx)
+
+	if apiResult.Error() != nil {
+		return nil, apiResult.Error()
+	}
+
+	err := apiResult.Into(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
+}
