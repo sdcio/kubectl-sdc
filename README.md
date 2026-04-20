@@ -6,10 +6,26 @@ kubectl-sdc is the SDC specific kubectl plugin.
 
 ## installation
 
-### option 1: github release artifacts
-Download the prebuilt `kubectl-sdc` binary from the GitHub Releases page and place it in your `PATH`.
+### option 1: one-line installer
+Install the latest release into `~/.local/bin`:
 
-### option 2: go install (alternative)
+```bash
+curl -fsSL https://raw.githubusercontent.com/sdcio/kubectl-sdc/main/install.sh | sh
+```
+
+Install a specific version or choose a different destination directory:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/sdcio/kubectl-sdc/main/install.sh | VERSION=v0.1.3 INSTALL_DIR=/usr/local/bin sh
+```
+
+The installer detects `Linux` and `macOS`, downloads the matching release artifact, and installs `kubectl-sdc` into the selected directory. Ensure that directory is in your `PATH`.
+The same install also places `kubectl_complete-sdc` in that directory and marks it executable, which is required for kubectl completion support.
+
+### option 2: github release artifacts
+Download the prebuilt release artifact from the GitHub Releases page and place both `kubectl-sdc` and `kubectl_complete-sdc` in your `PATH`.
+
+### option 3: go install (alternative)
 If you prefer building from source, install directly from the module:
 
 ```bash
@@ -17,6 +33,7 @@ go install github.com/sdcio/kubectl-sdc/cmd/kubectl-sdc@main
 ```
 
 This places the binary in `$(go env GOPATH)/bin` (or `$(go env GOBIN)` if set), so ensure that directory is in your `PATH`.
+This method installs only `kubectl-sdc`. If you want kubectl completion support as well, use the one-line installer or install `kubectl_complete-sdc` separately from a release artifact.
 
 ## notes
 - Commands use the current kubectl config to access the cluster and namespace.

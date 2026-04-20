@@ -17,7 +17,7 @@ project_name: kubectl-sdc
 builds:
   - id: kubectl-sdc
     binary: kubectl-sdc
-    main: ./cmd
+    main: ./cmd/kubectl-sdc
     env:
       - CGO_ENABLED=0
     ldflags:
@@ -34,11 +34,7 @@ archives:
       {{ .ProjectName }}_
       {{- .Version }}_
       {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else if eq .Arch "arm" }}armv7
-      {{- else if eq .Arch "arm64" }}aarch64
-      {{- else }}{{ .Arch }}{{ end }}
+      {{- .Arch }}
     files:
       - ./kubectl_complete-sdc
 nfpms:
@@ -56,7 +52,7 @@ nfpms:
     bindir: /usr/bin
     contents:
       - src: ./kubectl_complete-sdc
-        dst: /usr/bin/kubectl_complete-sdc
+        dst: /usr/local/bin/kubectl_complete-sdc
         file_info:
           mode: 0755
 checksum:
