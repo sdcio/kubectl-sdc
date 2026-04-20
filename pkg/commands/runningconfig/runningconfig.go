@@ -63,7 +63,6 @@ func ParseFormat(formatStr string) (client.Format, error) {
 
 // Run connects to the data server and fetches the running configuration for the target.
 func Run(ctx context.Context, cl RunningConfigClient, namespace, target string, format client.Format) (string, error) {
-
 	// if the format is YAML, we actually need to request JSON from the server and convert it ourselves, since the server doesn't support YAML natively
 	reqFormat := format
 	if reqFormat == client.FormatYAML {
