@@ -459,7 +459,7 @@ type Format string
 
 const (
 	FormatJSON     Format = "json"
-	FormatJSONIETF Format = "json-ietf"
+	FormatJSONIETF Format = "json_ietf"
 	FormatXML      Format = "xml"
 	FormatXPath    Format = "xpath"
 	FormatYAML     Format = "yaml"

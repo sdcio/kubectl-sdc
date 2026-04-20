@@ -24,10 +24,8 @@ import (
 
 	"github.com/sdcio/kubectl-sdc/pkg/client"
 	"github.com/sdcio/kubectl-sdc/pkg/commands/runningconfig"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/genericiooptions"
-	"k8s.io/client-go/kubernetes"
 )
 
 type RunningConfigOptions struct {
@@ -85,38 +83,11 @@ func (o *RunningConfigOptions) Validate() error {
 func (o *RunningConfigOptions) Run(_ *cobra.Command) error {
 	ctx := context.Background()
 
-	// Get the data-server service port from Kubernetes
-	clientset, err := kubernetes.NewForConfig(o.restConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create kubernetes clientset: %w", err)
-	}
-
-	svc, err := clientset.CoreV1().Services("sdc-system").Get(ctx, "data-server", metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to get data-server service: %w", err)
-	}
-
-	if len(svc.Spec.Ports) == 0 {
-		return fmt.Errorf("data-server service has no ports")
-	}
-
-	port, err := runningconfig.ResolveDataServicePort(svc)
+	cl, err := client.NewConfigClient(o.restConfig)
 	if err != nil {
 		return err
 	}
-
-	// Create data client to fetch running config from data-server
-	dataClient, err := client.NewDataClient(o.restConfig, "sdc-system", "data-server", port)
-	if err != nil {
-		return fmt.Errorf("failed to create data client: %w", err)
-	}
-	defer func() {
-		if err := dataClient.Close(); err != nil {
-			_, _ = fmt.Fprintf(o.ErrOut, "warning: failed to close data client: %v\n", err)
-		}
-	}()
-
-	output, err := runningconfig.Run(ctx, dataClient, o.namespace, o.target, o.format)
+	output, err := runningconfig.Run(ctx, cl, o.namespace, o.target, o.format)
 	if err != nil {
 		return err
 	}
@@ -158,7 +129,7 @@ func NewCmdRunningConfig(streams genericiooptions.IOStreams) (*cobra.Command, er
 
 	// Build format help text dynamically
 	formatHelp := fmt.Sprintf("output format (%s)", runningconfig.FormatListString())
-	cmd.Flags().StringVar(&o.formatStr, "format", "xpath", formatHelp)
+	cmd.Flags().StringVar(&o.formatStr, "format", "yaml", formatHelp)
 
 	// Format flag completion
 	if err := cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

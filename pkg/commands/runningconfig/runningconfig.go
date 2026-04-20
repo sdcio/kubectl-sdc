@@ -1,15 +1,17 @@
 package runningconfig
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/beevik/etree"
+	"github.com/sdcio/config-server/apis/config/v1alpha1"
 	"github.com/sdcio/kubectl-sdc/pkg/client"
-	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
-
-const defaultDataServicePort = 56000
 
 // DataClient defines the subset of the data client used by runningconfig.
 type DataClient interface {
@@ -59,32 +61,64 @@ func ParseFormat(formatStr string) (client.Format, error) {
 	}
 }
 
-// ResolveDataServicePort extracts the data-service port from the service, falling back to the default port.
-func ResolveDataServicePort(svc *corev1.Service) (int, error) {
-	if len(svc.Spec.Ports) == 0 {
-		return 0, fmt.Errorf("data-server service has no ports")
+// Run connects to the data server and fetches the running configuration for the target.
+func Run(ctx context.Context, cl RunningConfigClient, namespace, target string, format client.Format) (string, error) {
+	// if the format is YAML, we actually need to request JSON from the server and convert it ourselves, since the server doesn't support YAML natively
+	reqFormat := format
+	if reqFormat == client.FormatYAML {
+		reqFormat = client.FormatJSON
 	}
 
-	for _, port := range svc.Spec.Ports {
-		if port.Name == "data-service" {
-			return int(port.TargetPort.IntVal), nil
+	// Fetch the running configuration from the server
+	runningConfig, err := cl.GetRunningConfig(ctx, namespace, target, reqFormat)
+	if err != nil {
+		return "", fmt.Errorf("failed to get running config: %w", err)
+	}
+
+	// Format the output based on the requested format
+	switch format {
+	case client.FormatJSON, client.FormatJSONIETF:
+		var formatted bytes.Buffer
+		err = json.Indent(&formatted, []byte(runningConfig.Value), "", "  ")
+		if err != nil {
+			return "", fmt.Errorf("failed to format JSON: %w", err)
 		}
-	}
+		return formatted.String(), nil
+	case client.FormatXML:
+		doc := etree.NewDocument()
 
-	return defaultDataServicePort, nil
+		if err := doc.ReadFromString(runningConfig.Value); err != nil {
+			return "", fmt.Errorf("failed to parse XML: %w", err)
+		}
+		wrapInConfig(doc)
+		return doc.WriteToString()
+	case client.FormatYAML:
+		yamlVal, err := yaml.JSONToYAML([]byte(runningConfig.Value))
+		if err != nil {
+			return "", fmt.Errorf("failed to convert JSON to YAML: %w", err)
+		}
+		return string(yamlVal), nil
+	default:
+		return "", fmt.Errorf("unsupported format: %s", format)
+	}
 }
 
-// Run connects to the data server and fetches the running configuration for the target.
-func Run(ctx context.Context, dataClient DataClient, namespace, target string, format client.Format) (string, error) {
-	if err := dataClient.Connect(ctx); err != nil {
-		return "", fmt.Errorf("failed to connect to data-server: %w", err)
+func wrapInConfig(xmlDoc *etree.Document) {
+	// make sure we have a root element
+	// Create a new root <config>
+	root := etree.NewElement("config")
+
+	// Move all top-level elements under <config>
+	for _, el := range xmlDoc.ChildElements() {
+		root.AddChild(el)
 	}
 
-	datastoreName := fmt.Sprintf("%s.%s", namespace, target)
-	configOutput, err := dataClient.GetIntent(ctx, format, datastoreName, "running")
-	if err != nil {
-		return "", err
-	}
+	// Reset document root
+	xmlDoc.SetRoot(root)
+	// set indent
+	xmlDoc.Indent(2)
+}
 
-	return configOutput.String(), nil
+type RunningConfigClient interface {
+	GetRunningConfig(ctx context.Context, namespace string, name string, format client.Format) (*v1alpha1.TargetRunningConfig, error)
 }
