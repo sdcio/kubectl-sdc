@@ -13,8 +13,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const defaultDataServicePort = 56000
-
 // DataClient defines the subset of the data client used by runningconfig.
 type DataClient interface {
 	Connect(ctx context.Context) error
