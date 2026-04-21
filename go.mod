@@ -7,8 +7,8 @@ go 1.25.0
 require (
 	github.com/beevik/etree v1.6.0
 	github.com/fatih/color v1.19.0
-	github.com/sdcio/config-server v0.0.56-0.20260415114953-ec11351ab01b
-	github.com/sdcio/sdc-protos v0.0.51-0.20260402092647-f569212c0055
+	github.com/sdcio/config-server v0.0.56
+	github.com/sdcio/sdc-protos v0.0.51
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/steiler/go-fuzzyfinder v0.4.0
@@ -137,8 +137,8 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/apiserver v0.35.1 // indirect
-	k8s.io/component-base v0.35.1 // indirect
+	k8s.io/apiserver v0.35.3 // indirect
+	k8s.io/component-base v0.35.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20260127142750-a19766b6e2d4 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
