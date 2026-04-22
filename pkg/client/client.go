@@ -96,13 +96,30 @@ func (c *ConfigClient) ListDeviationNames(ctx context.Context, namespace string,
 }
 
 func (c *ConfigClient) GetBlameTree(ctx context.Context, namespace string, device string) (*sdcpb.BlameTreeElement, error) {
-	resp, err := c.c.ConfigV1alpha1().ConfigBlames(namespace).Get(ctx, device, metav1.GetOptions{})
+	restClient := c.c.ConfigV1alpha1().RESTClient()
+
+	obj := &v1alpha1.TargetConfigBlame{}
+
+	apiReq := restClient.
+		Get().
+		Namespace(namespace).
+		Resource(v1Config.TargetPlural).
+		Name(device).
+		SubResource(v1Config.SubResource_ConfigBlame)
+
+	apiResult := apiReq.Do(ctx)
+
+	if apiResult.Error() != nil {
+		return nil, apiResult.Error()
+	}
+
+	err := apiResult.Into(obj)
 	if err != nil {
 		return nil, err
 	}
 
 	bte := &sdcpb.BlameTreeElement{}
-	err = protojson.Unmarshal([]byte(resp.Status.Value.Raw), bte)
+	err = protojson.Unmarshal(obj.Value.Raw, bte)
 	if err != nil {
 		return nil, err
 	}
@@ -114,28 +131,6 @@ func (c *ConfigClient) ListTargetNames(ctx context.Context, namespace string) ([
 		Group:    "config.sdcio.dev",
 		Version:  "v1alpha1",
 		Resource: "targets",
-	}
-
-	resp, err := c.mdClient.Resource(gvr).Namespace(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]string, 0, len(resp.Items))
-
-	for _, i := range resp.Items {
-		result = append(result, i.Name)
-	}
-
-	return result, nil
-}
-
-// ListRunningConfigNames lists all running config names in a namespace
-func (c *ConfigClient) ListRunningConfigNames(ctx context.Context, namespace string) ([]string, error) {
-	gvr := schema.GroupVersionResource{
-		Group:    "config.sdcio.dev",
-		Version:  "v1alpha1",
-		Resource: "runningconfigs",
 	}
 
 	resp, err := c.mdClient.Resource(gvr).Namespace(namespace).List(ctx, metav1.ListOptions{})
