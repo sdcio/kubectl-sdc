@@ -16,7 +16,8 @@ curl -fsSL https://raw.githubusercontent.com/sdcio/kubectl-sdc/main/install.sh |
 Install a specific version or choose a different destination directory:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/sdcio/kubectl-sdc/main/install.sh | VERSION=v0.1.3 INSTALL_DIR=/usr/local/bin sh
+curl -fsSL https://raw.githubusercontent.com/sdcio/kubectl-sdc/main/install.sh | VERSION=v0.1.3 INSTALL_DIR=$HOME/.local/bin sh
+curl -fsSL https://raw.githubusercontent.com/sdcio/kubectl-sdc/main/install.sh | sudo env VERSION=v0.1.3 INSTALL_DIR=/usr/local/bin sh
 ```
 
 The installer detects `Linux` and `macOS`, downloads the matching release artifact, and installs `kubectl-sdc` into the selected directory. Ensure that directory is in your `PATH`.

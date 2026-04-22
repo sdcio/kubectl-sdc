@@ -19,7 +19,8 @@ Environment variables:
 
 Examples:
   curl -fsSL https://raw.githubusercontent.com/${OWNER}/${REPO}/main/install.sh | sh
-  curl -fsSL https://raw.githubusercontent.com/${OWNER}/${REPO}/main/install.sh | VERSION=v0.1.3 INSTALL_DIR=/usr/local/bin sh
+    curl -fsSL https://raw.githubusercontent.com/${OWNER}/${REPO}/main/install.sh | VERSION=v0.1.3 INSTALL_DIR=\$HOME/.local/bin sh
+    curl -fsSL https://raw.githubusercontent.com/${OWNER}/${REPO}/main/install.sh | sudo env VERSION=v0.1.3 INSTALL_DIR=/usr/local/bin sh
 EOF
 }
 log() {
@@ -31,6 +32,18 @@ require_cmd() {
         log "missing required command: $1"
         exit 1
     fi
+}
+
+permission_hint() {
+        cat <<EOF >&2
+permission denied writing to ${install_dir}
+
+If installing to a protected location (for example /usr/local/bin), run the installer as root:
+    curl -fsSL https://raw.githubusercontent.com/${OWNER}/${REPO}/main/install.sh | sudo env VERSION=${tag} INSTALL_DIR=${install_dir} sh
+
+Or install to a user-writable location:
+    curl -fsSL https://raw.githubusercontent.com/${OWNER}/${REPO}/main/install.sh | INSTALL_DIR=\$HOME/.local/bin sh
+EOF
 }
 
 detect_os() {
@@ -121,12 +134,25 @@ archive_path="${tmpdir}/${archive_name}"
 log "downloading ${archive_url}"
 download "$archive_url" "$archive_path"
 
-mkdir -p "$install_dir"
+if ! mkdir -p "$install_dir"; then
+    permission_hint
+    exit 1
+fi
+if [ ! -w "$install_dir" ]; then
+    permission_hint
+    exit 1
+fi
+
 tar -xzf "$archive_path" -C "$tmpdir"
-cp "${tmpdir}/${BINARY}" "${install_dir}/${BINARY}"
-cp "${tmpdir}/${COMPLETION_BINARY}" "${install_dir}/${COMPLETION_BINARY}"
-chmod 0755 "${install_dir}/${BINARY}"
-chmod 0755 "${install_dir}/${COMPLETION_BINARY}"
+if command -v install >/dev/null 2>&1; then
+    install -m 0755 "${tmpdir}/${BINARY}" "${install_dir}/${BINARY}"
+    install -m 0755 "${tmpdir}/${COMPLETION_BINARY}" "${install_dir}/${COMPLETION_BINARY}"
+else
+    cp "${tmpdir}/${BINARY}" "${install_dir}/${BINARY}"
+    cp "${tmpdir}/${COMPLETION_BINARY}" "${install_dir}/${COMPLETION_BINARY}"
+    chmod 0755 "${install_dir}/${BINARY}"
+    chmod 0755 "${install_dir}/${COMPLETION_BINARY}"
+fi
 
 log "installed ${BINARY} ${tag} to ${install_dir}/${BINARY}"
 log "installed ${COMPLETION_BINARY} ${tag} to ${install_dir}/${COMPLETION_BINARY}"
