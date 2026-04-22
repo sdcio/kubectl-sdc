@@ -17,7 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -26,6 +28,36 @@ import (
 	"k8s.io/cli-runtime/pkg/genericiooptions"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
+
+var (
+	version = "v0.0.0"
+	commit  = ""
+)
+
+func buildVersionString() string {
+	v := version
+	if v == "" {
+		v = "v0.0.0"
+	}
+
+	c := commit
+	if c == "" {
+		if bi, ok := debug.ReadBuildInfo(); ok {
+			for _, setting := range bi.Settings {
+				if setting.Key == "vcs.revision" && len(setting.Value) >= 7 {
+					c = setting.Value[:7]
+					break
+				}
+			}
+		}
+	}
+
+	if c != "" {
+		return fmt.Sprintf("%s (%s)", v, c)
+	}
+
+	return v
+}
 
 func main() {
 	flags := pflag.NewFlagSet("", pflag.ExitOnError)
@@ -60,7 +92,7 @@ func main() {
 	root.AddCommand(runningConfigCmd)
 
 	root.AddCommand(completionCmd)
-	root.Version = "v0.0.0"
+	root.Version = buildVersionString()
 	root.CompletionOptions.DisableDefaultCmd = false
 
 	cobra.EnableCommandSorting = false
