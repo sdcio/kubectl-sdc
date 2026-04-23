@@ -34,31 +34,6 @@ var (
 	commit  = ""
 )
 
-func buildVersionString() string {
-	v := version
-	if v == "" {
-		v = "v0.0.0"
-	}
-
-	c := commit
-	if c == "" {
-		if bi, ok := debug.ReadBuildInfo(); ok {
-			for _, setting := range bi.Settings {
-				if setting.Key == "vcs.revision" && len(setting.Value) >= 7 {
-					c = setting.Value[:7]
-					break
-				}
-			}
-		}
-	}
-
-	if c != "" {
-		return fmt.Sprintf("%s (%s)", v, c)
-	}
-
-	return v
-}
-
 func main() {
 	flags := pflag.NewFlagSet("", pflag.ExitOnError)
 	pflag.CommandLine = flags
@@ -138,4 +113,35 @@ $ kubectl sdc completion fish | source
 		}
 		return err
 	},
+}
+
+// buildVersionString constructs the version string for the CLI, including the commit hash if available
+func buildVersionString() string {
+	v := version
+	if v == "" {
+		v = "v0.0.0"
+	}
+
+	if c := getBuildInfoCommitId(); c != "" {
+		return fmt.Sprintf("%s (%s)", v, c)
+	}
+
+	return v
+}
+
+// getBuildInfoCommitId attempts to retrieve the commit hash from build information or the global variable
+func getBuildInfoCommitId() string {
+	if commit != "" {
+		return commit
+	}
+
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		for _, s := range bi.Settings {
+			if s.Key == "vcs.revision" && len(s.Value) >= 7 {
+				return s.Value[:7]
+			}
+		}
+	}
+
+	return ""
 }
