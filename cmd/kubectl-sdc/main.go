@@ -17,7 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -25,6 +27,11 @@ import (
 	sdcCmd "github.com/sdcio/kubectl-sdc/pkg/cmd"
 	"k8s.io/cli-runtime/pkg/genericiooptions"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+)
+
+var (
+	version = "v0.0.0"
+	commit  = ""
 )
 
 func main() {
@@ -60,7 +67,7 @@ func main() {
 	root.AddCommand(runningConfigCmd)
 
 	root.AddCommand(completionCmd)
-	root.Version = "v0.0.0"
+	root.Version = buildVersionString()
 	root.CompletionOptions.DisableDefaultCmd = false
 
 	cobra.EnableCommandSorting = false
@@ -106,4 +113,35 @@ $ kubectl sdc completion fish | source
 		}
 		return err
 	},
+}
+
+// buildVersionString constructs the version string for the CLI, including the commit hash if available
+func buildVersionString() string {
+	v := version
+	if v == "" {
+		v = "v0.0.0"
+	}
+
+	if c := getBuildInfoCommitId(); c != "" {
+		return fmt.Sprintf("%s (%s)", v, c)
+	}
+
+	return v
+}
+
+// getBuildInfoCommitId attempts to retrieve the commit hash from build information or the global variable
+func getBuildInfoCommitId() string {
+	if commit != "" {
+		return commit
+	}
+
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		for _, s := range bi.Settings {
+			if s.Key == "vcs.revision" && len(s.Value) >= 7 {
+				return s.Value[:7]
+			}
+		}
+	}
+
+	return ""
 }
