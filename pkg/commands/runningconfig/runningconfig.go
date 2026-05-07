@@ -5,11 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/beevik/etree"
+	"github.com/fatih/color"
 	"github.com/sdcio/config-server/apis/config/v1alpha1"
 	"github.com/sdcio/kubectl-sdc/pkg/client"
+	sdcpb "github.com/sdcio/sdc-protos/sdcpb"
+	"google.golang.org/protobuf/encoding/protojson"
 	"sigs.k8s.io/yaml"
 )
 
@@ -98,6 +102,20 @@ func Run(ctx context.Context, cl RunningConfigClient, namespace, target string, 
 			return "", fmt.Errorf("failed to convert JSON to YAML: %w", err)
 		}
 		return string(yamlVal), nil
+	case client.FormatXPath:
+		pv := &sdcpb.PathValues{}
+		if err := protojson.Unmarshal([]byte(runningConfig.Value), pv); err != nil {
+			return "", fmt.Errorf("failed to unmarshal xpath response: %w", err)
+		}
+		dim := color.New(color.FgHiGreen).SprintFunc()
+		lines := make([]string, 0, len(pv.PathValues))
+		for _, entry := range pv.GetPathValues() {
+			path := entry.GetPath().ToXPath(false)
+			value := strings.ReplaceAll(entry.GetValue().ToString(), "\n", "\\n")
+			lines = append(lines, fmt.Sprintf("%s %s", dim(path+":"), value))
+		}
+		slices.Sort(lines)
+		return strings.Join(lines, "\n"), nil
 	default:
 		return "", fmt.Errorf("unsupported format: %s", format)
 	}

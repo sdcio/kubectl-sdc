@@ -140,11 +140,10 @@ func (o *BlameOptions) Run(_ *cobra.Command) error {
 	}
 
 	// run the blame command with the filter
-	out, err := blame.Run(ctx, cl, o.namespace, o.target, pathFilter, filter)
+	out, err := blame.Run(ctx, blame.NewBlameOptions(cl, o.namespace, o.target, pathFilter, filter))
 	if err != nil {
 		return fmt.Errorf("failed to run blame: %w", err)
 	}
-
 	if out == nil {
 		return fmt.Errorf("blame returned no output")
 	}
