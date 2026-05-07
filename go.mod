@@ -8,7 +8,7 @@ require (
 	github.com/beevik/etree v1.6.0
 	github.com/fatih/color v1.19.0
 	github.com/sdcio/config-server v0.0.56
-	github.com/sdcio/sdc-protos v0.0.51
+	github.com/sdcio/sdc-protos v0.0.53
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/steiler/go-fuzzyfinder v0.4.0

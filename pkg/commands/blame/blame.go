@@ -6,22 +6,18 @@ import (
 	sdcpb "github.com/sdcio/sdc-protos/sdcpb"
 )
 
-type BlameFilterClient interface {
-	GetBlameTree(ctx context.Context, namespace string, device string) (*sdcpb.BlameTreeElement, error)
-}
-
-func Run(ctx context.Context, bfc BlameFilterClient, namespace string, device string, pathFilter PathFilters, filter BlameFilters) (*sdcpb.BlameTreeElement, error) {
-	tree, err := bfc.GetBlameTree(ctx, namespace, device)
+func Run(ctx context.Context, bo *BlameOptions) (*sdcpb.BlameTreeElement, error) {
+	tree, err := bo.GetBlameFilterClient().GetBlameTree(ctx, bo.GetNamespace(), bo.GetDevice())
 	if err != nil {
 		return nil, err
 	}
 
 	// return full tree if no filters provided
-	if len(filter) == 0 && len(pathFilter) == 0 {
+	if len(bo.GetFilter()) == 0 && len(bo.GetPathFilter()) == 0 {
 		return tree, nil
 	}
 
-	return filterBlameTree(tree, nil, pathFilter, filter), nil
+	return filterBlameTree(tree, nil, bo.GetPathFilter(), bo.GetFilter()), nil
 }
 
 // filterBlameTree filter blame tree keeping the whole path

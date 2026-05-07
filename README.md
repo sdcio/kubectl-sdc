@@ -38,21 +38,20 @@ This method installs only `kubectl-sdc`. If you want kubectl completion support 
 
 ## notes
 - Commands use the current kubectl config to access the cluster and namespace.
-- `runningconfig` connects to `sdc-system/data-server` via port-forward.
 
 ## subcommands
-kubectl-sdc provides the following functionalities.
+kubectl-sdc provides the following subcommands.
 
 ### blame
-The blame command provides a tree based view on the actual running device configuration of the given SDC target.
+The blame command provides a tree-based view of the actual running device configuration for the given SDC target.
 
-It takes the `--target` parameter, that defines which targets is to be displayed.
+It takes the `--target` parameter, which defines which target is displayed.
 The `--format` parameter supports `tree` (default) and `xpath`; with `--format=xpath`, the `--interactive` flag opens a fuzzyfinder with multi-select (`Tab` to select) and prints the selected XPath lines.
 
-For every configured attribute you will see the highes preference value as well as the source of that value.
-- `running` are attributes that come from the device itself, where no intent exist in sdc.
-- `default` is all the default values that are present in the config, that are not overwritten by any specific config.
-- `<namespace>.<intentname>` is the reference to the intent that defined the actual highes preference value for that config attribute.
+For every configured attribute you will see the highest preference value as well as the source of that value.
+- `running` are attributes that come from the device itself, where no intent exists in SDC.
+- `default` is all the default values that are present in the config, and are not overwritten by any specific config.
+- `<namespace>.<intentname>` is the reference to the intent that defined the actual highest preference value for that config attribute.
 ```
 kubectl sdc blame --target srl1 --filter-owner running --format tree --filter-path /interface[name=mgmt0]/subinterface --filter-path /system/snmp/access-group[name=SNMPv2-RO-Community] --filter-owner default --filter-leaf admin*
   -----    │     🎯 default.srl1
@@ -111,14 +110,13 @@ kubectl sdc blame --target sros --filter-path "/config/service/emergency/*" --fi
 ```
 
 ### runningconfig
-The runningconfig command retrieves the running configuration for a target from the data-server.
+The runningconfig command retrieves the running configuration for a target.
 
-It takes the `--target` parameter, that defines which target is to be displayed.
-The `--format` parameter controls the output format (json, json_ietf, xml, xpath, yaml). Default is `xpath`.
+It takes the `--target` parameter, which defines which target is displayed.
+The `--format` parameter controls the output format (json, json_ietf, xml, xpath, yaml). Default is `yaml`.
 
-Hints:
+Hint:
 - The command uses the current kubectl config to access the cluster and namespace.
-- The command connects to the `sdc-system/data-server` service (port-forward) to fetch the running config.
 
 Example:
 ```
@@ -167,7 +165,7 @@ Flags:
 Mode behavior:
 - Non-interactive (default): output all deviations after applying `--filter-path`.
 - Interactive (`--interactive`): choose deviations in fuzzy finder.
-- `--query`, `--preview`, and `--select-path-prefix` require `--interactive`.
+- `--query`, `--preview`, and `--select-path-prefix` are interactive-mode options.
 
 Selection notes:
 - The preview shows the actual and desired value for the currently selected path.
@@ -237,7 +235,6 @@ Input options:
 Behavior notes:
 - Multi-document YAML files are supported.
 - If a `TargetClearDeviation` manifest omits `metadata.namespace`, the current kubectl namespace is used.
-- The command sends the resource to the target `cleardeviation` subresource.
 
 Examples:
 
