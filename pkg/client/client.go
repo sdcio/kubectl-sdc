@@ -210,7 +210,9 @@ func (c *ConfigClient) ClearTargetDeviations(ctx context.Context, resource *v1al
 			warnings = append(warnings, fmt.Sprintf("%s: %s", r.Name, w))
 		}
 		if !r.Success {
-			failed = append(failed, fmt.Sprintf("%s: %s", r.Name, strings.Join(r.Errors, "; ")))
+			for _, e := range r.Errors {
+				failed = append(failed, fmt.Sprintf("%s: %s", r.Name, e))
+			}
 		}
 	}
 	if len(failed) > 0 {
@@ -218,7 +220,7 @@ func (c *ConfigClient) ClearTargetDeviations(ctx context.Context, resource *v1al
 		if msg == "" {
 			msg = "clear deviations partially failed"
 		}
-		return warnings, fmt.Errorf("%s: %s", msg, strings.Join(failed, "; "))
+		return warnings, fmt.Errorf("%s:\n%s", msg, strings.Join(failed, "\n"))
 	}
 	return warnings, nil
 }
