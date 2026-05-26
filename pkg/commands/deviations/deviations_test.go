@@ -1,8 +1,11 @@
 package deviations
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
+	"strings"
 	"testing"
 
 	v1alpha1 "github.com/sdcio/config-server/apis/config/v1alpha1"
@@ -32,7 +35,7 @@ func TestRun_ByTargetReturnsSelectedDeviations(t *testing.T) {
 	})
 	defer restore()
 
-	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1")))
+	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1")), io.Discard)
 	if err != nil {
 		t.Fatalf("Run() unexpected error: %v", err)
 	}
@@ -64,7 +67,7 @@ func TestRun_ByTargetInteractiveReturnsSelectedDeviations(t *testing.T) {
 	})
 	defer restore()
 
-	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithInteractive(true)))
+	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithInteractive(true)), io.Discard)
 	if err != nil {
 		t.Fatalf("Run() unexpected error: %v", err)
 	}
@@ -90,7 +93,7 @@ func TestRun_ByDeviationNameReturnsSelectedDeviations(t *testing.T) {
 	})
 	defer restore()
 
-	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithDeviationName("dev-1"), WithInteractive(true)))
+	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithDeviationName("dev-1"), WithInteractive(true)), io.Discard)
 	if err != nil {
 		t.Fatalf("Run() unexpected error: %v", err)
 	}
@@ -111,7 +114,7 @@ func TestRun_NoSelectionReturnsNilInteractive(t *testing.T) {
 	})
 	defer restore()
 
-	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithInteractive(true)))
+	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithInteractive(true)), io.Discard)
 	if err != nil {
 		t.Fatalf("Run() unexpected error: %v", err)
 	}
@@ -182,7 +185,7 @@ func TestRun_SelectPathPrefixOptionWiring(t *testing.T) {
 			})
 			defer restore()
 
-			selected, err := Run(context.Background(), cl, NewDeviationOptions("default", tt.options...))
+			selected, err := Run(context.Background(), cl, NewDeviationOptions("default", tt.options...), io.Discard)
 			if err != nil {
 				t.Fatalf("Run() unexpected error: %v", err)
 			}
@@ -200,7 +203,7 @@ func TestRun_NonInteractiveFilterPath(t *testing.T) {
 	cl := mockdeviations.NewMockDeviationClient(ctrl)
 	cl.EXPECT().GetDeviationsByTarget(gomock.Any(), "default", "target-1").Return(newTestDeviations(), nil)
 
-	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithFilterPath([]string{"/system/name"})))
+	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithFilterPath([]string{"/system/name"})), io.Discard)
 	if err != nil {
 		t.Fatalf("Run() unexpected error: %v", err)
 	}
@@ -219,7 +222,7 @@ func TestRun_FilterPathNoMatchesReturnsError(t *testing.T) {
 	cl := mockdeviations.NewMockDeviationClient(ctrl)
 	cl.EXPECT().GetDeviationsByTarget(gomock.Any(), "default", "target-1").Return(newTestDeviations(), nil)
 
-	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithFilterPath([]string{"/interfaces"})))
+	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithFilterPath([]string{"/interfaces"})), io.Discard)
 	if !errors.Is(err, ErrNoDeviationsAfterPathFiltering) {
 		t.Fatalf("Run() error = %v, want errors.Is(..., ErrNoDeviationsAfterPathFiltering)", err)
 	}
@@ -234,17 +237,17 @@ func TestRun_RevertClearsSelectedDeviations(t *testing.T) {
 
 	cl := mockdeviations.NewMockDeviationClient(ctrl)
 	cl.EXPECT().GetDeviationsByTarget(gomock.Any(), "default", "target-1").Return(newTestDeviations(), nil)
-	cl.EXPECT().ClearTargetDeviations(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, resource *v1alpha1.TargetClearDeviation) error {
+	cl.EXPECT().ClearTargetDeviations(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, resource *v1alpha1.TargetClearDeviation) ([]string, error) {
 		if resource.Name != "target-1" {
-			return errors.New("unexpected target name")
+			return nil, errors.New("unexpected target name")
 		}
 		if resource.Namespace != "default" {
-			return errors.New("unexpected namespace")
+			return nil, errors.New("unexpected namespace")
 		}
 		if len(resource.Spec.Config) != 1 || len(resource.Spec.Config[0].Paths) != 1 || resource.Spec.Config[0].Paths[0] != "/system/name" {
-			return errors.New("unexpected resource payload")
+			return nil, errors.New("unexpected resource payload")
 		}
-		return nil
+		return []string{"path /system/name already at desired value"}, nil
 	})
 
 	restore := stubFindDeviationIndexes(func(deviations []*types.Deviation, display func(i int) string, opts ...interface{}) ([]int, error) {
@@ -252,12 +255,16 @@ func TestRun_RevertClearsSelectedDeviations(t *testing.T) {
 	})
 	defer restore()
 
-	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithInteractive(true), WithRevert(true)))
+	warnOut := &bytes.Buffer{}
+	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1"), WithInteractive(true), WithRevert(true)), warnOut)
 	if err != nil {
 		t.Fatalf("Run() unexpected error: %v", err)
 	}
 	if selected != nil {
 		t.Fatalf("selected = %v, want nil after revert", selected)
+	}
+	if !strings.Contains(warnOut.String(), "path /system/name already at desired value") {
+		t.Fatalf("warnings not forwarded to writer: %q", warnOut.String())
 	}
 }
 
@@ -266,7 +273,7 @@ func TestRun_NoTargetOrDeviationReturnsError(t *testing.T) {
 	defer ctrl.Finish()
 
 	cl := mockdeviations.NewMockDeviationClient(ctrl)
-	selected, err := Run(context.Background(), cl, NewDeviationOptions("default"))
+	selected, err := Run(context.Background(), cl, NewDeviationOptions("default"), io.Discard)
 	if !errors.Is(err, ErrDeviationOrTargetNotSet) {
 		t.Fatalf("Run() error = %v, want errors.Is(..., ErrDeviationOrTargetNotSet)", err)
 	}
@@ -282,7 +289,7 @@ func TestRun_NoDeviationsFoundReturnsError(t *testing.T) {
 	cl := mockdeviations.NewMockDeviationClient(ctrl)
 	cl.EXPECT().GetDeviationsByTarget(gomock.Any(), "default", "target-1").Return(types.Deviations{}, nil)
 
-	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1")))
+	selected, err := Run(context.Background(), cl, NewDeviationOptions("default", WithTarget("target-1")), io.Discard)
 	if !errors.Is(err, ErrNoDeviationsFound) {
 		t.Fatalf("Run() error = %v, want errors.Is(..., ErrNoDeviationsFound)", err)
 	}
@@ -296,9 +303,12 @@ func TestRevert_WithoutDeviationsReturnsError(t *testing.T) {
 	defer ctrl.Finish()
 
 	cl := mockdeviations.NewMockDeviationClient(ctrl)
-	err := revert(context.Background(), cl, "default", "target-1", types.Deviations{})
+	warnings, err := revert(context.Background(), cl, "default", "target-1", types.Deviations{})
 	if err == nil || err.Error() != "no deviations provided to clear" {
 		t.Fatalf("revert() error = %v, want %q", err, "no deviations provided to clear")
+	}
+	if warnings != nil {
+		t.Fatalf("revert() warnings = %v, want nil", warnings)
 	}
 }
 

@@ -97,6 +97,21 @@ func (d *IntentDeviations) Name() string {
 	return d.name
 }
 
+// IntentName returns the underlying Config or Target resource name that
+// owns this deviation, stripping the "<type>-" prefix that config-server
+// adds when naming Deviation CRs (see apis/config/v1alpha1.DeviationName).
+// Legacy CRs without the prefix return their raw Name unchanged.
+//
+// TODO: replace with v1alpha1.ParseDeviationName once a config-server
+// release exposing it is pinned in go.mod.
+func (d *IntentDeviations) IntentName() string {
+	prefix := string(d.typ) + "-"
+	if rest, ok := strings.CutPrefix(d.name, prefix); ok && rest != "" {
+		return rest
+	}
+	return d.name
+}
+
 func (d *IntentDeviations) Length() int {
 	return len(d.deviations)
 }
