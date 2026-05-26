@@ -106,7 +106,7 @@ func (o *DeviationOptions) Run(_ *cobra.Command) error {
 	}
 
 	// Run the deviation selection
-	selectedDeviations, err := deviations.Run(ctx, cl, deviations.NewDeviationOptions(o.namespace, opts...))
+	selectedDeviations, err := deviations.Run(ctx, cl, deviations.NewDeviationOptions(o.namespace, opts...), o.ErrOut)
 	if err != nil {
 		return err
 	}

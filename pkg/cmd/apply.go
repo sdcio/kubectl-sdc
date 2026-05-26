@@ -77,7 +77,7 @@ func (o *ApplyOptions) Run(_ *cobra.Command) error {
 		return err
 	}
 
-	return apply.Apply(ctx, cl, o.namespace, o.files, o.Out)
+	return apply.Apply(ctx, cl, o.namespace, o.files, o.Out, o.ErrOut)
 }
 
 // NewCmdApply provides a cobra command wrapping ApplyOptions

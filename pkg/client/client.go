@@ -2,6 +2,8 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	v1Config "github.com/sdcio/config-server/apis/config"
 	"github.com/sdcio/config-server/apis/config/v1alpha1"
@@ -153,7 +155,7 @@ func NewTargetClearDeviation(namespace, targetName string, devs types.Deviations
 	content := make([]v1alpha1.TargetClearDeviationConfig, 0, len(devs))
 	for _, d := range devs {
 		content = append(content, v1alpha1.TargetClearDeviationConfig{
-			Name:  d.Name(),
+			Name:  d.IntentName(),
 			Paths: d.DeviationPaths(),
 		})
 	}
@@ -173,9 +175,11 @@ func NewTargetClearDeviation(namespace, targetName string, devs types.Deviations
 }
 
 // ClearTargetDeviations posts a pre-built TargetClearDeviation to the
-// cleardeviation subresource. Use NewTargetClearDeviation (convert.go) to
-// construct the resource from a types.Deviations value.
-func (c *ConfigClient) ClearTargetDeviations(ctx context.Context, resource *v1alpha1.TargetClearDeviation) error {
+// cleardeviation subresource and returns any non-fatal warnings the
+// server attached to the response. Per-entry failures reported in the
+// 200-OK body are turned into an error so callers don't mistake a
+// partial failure for success.
+func (c *ConfigClient) ClearTargetDeviations(ctx context.Context, resource *v1alpha1.TargetClearDeviation) ([]string, error) {
 	restClient := c.c.ConfigV1alpha1().RESTClient()
 
 	result := restClient.
@@ -187,7 +191,38 @@ func (c *ConfigClient) ClearTargetDeviations(ctx context.Context, resource *v1al
 		Body(resource).
 		Do(ctx)
 
-	return result.Error()
+	if err := result.Error(); err != nil {
+		return nil, err
+	}
+
+	rsp := &v1alpha1.TargetClearDeviation{}
+	if err := result.Into(rsp); err != nil {
+		return nil, fmt.Errorf("clear deviations: decode response: %w", err)
+	}
+	if rsp.Status == nil {
+		return nil, nil
+	}
+
+	warnings := append([]string(nil), rsp.Status.Warnings...)
+	var failed []string
+	for _, r := range rsp.Status.Results {
+		for _, w := range r.Warnings {
+			warnings = append(warnings, fmt.Sprintf("%s: %s", r.Name, w))
+		}
+		if !r.Success {
+			for _, e := range r.Errors {
+				failed = append(failed, fmt.Sprintf("%s: %s", r.Name, e))
+			}
+		}
+	}
+	if len(failed) > 0 {
+		msg := rsp.Status.Message
+		if msg == "" {
+			msg = "clear deviations partially failed"
+		}
+		return warnings, fmt.Errorf("%s:\n%s", msg, strings.Join(failed, "\n"))
+	}
+	return warnings, nil
 }
 
 func (c *ConfigClient) GetRunningConfig(ctx context.Context, namespace string, name string, format Format) (*v1alpha1.TargetRunningConfig, error) {

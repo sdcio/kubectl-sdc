@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,13 +46,14 @@ spec:
 	var got *v1alpha1.TargetClearDeviation
 	cl.EXPECT().
 		ClearTargetDeviations(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, resource *v1alpha1.TargetClearDeviation) error {
+		DoAndReturn(func(_ context.Context, resource *v1alpha1.TargetClearDeviation) ([]string, error) {
 			got = resource
-			return nil
+			return nil, nil
 		})
 
 	out := &bytes.Buffer{}
-	err := Apply(context.Background(), cl, "from-cli", []string{writeManifest(t, manifest)}, out)
+	errOut := &bytes.Buffer{}
+	err := Apply(context.Background(), cl, "from-cli", []string{writeManifest(t, manifest)}, out, errOut)
 	if err != nil {
 		t.Fatalf("Apply returned error: %v", err)
 	}
@@ -64,6 +66,9 @@ spec:
 	}
 	if s := strings.TrimSpace(out.String()); s != "targetcleardeviation/srl1 applied" {
 		t.Fatalf("unexpected output: %q", s)
+	}
+	if errOut.Len() != 0 {
+		t.Fatalf("unexpected errOut content: %q", errOut.String())
 	}
 }
 
@@ -87,13 +92,13 @@ spec:
 	var got *v1alpha1.TargetClearDeviation
 	cl.EXPECT().
 		ClearTargetDeviations(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, resource *v1alpha1.TargetClearDeviation) error {
+		DoAndReturn(func(_ context.Context, resource *v1alpha1.TargetClearDeviation) ([]string, error) {
 			got = resource
-			return nil
+			return nil, nil
 		})
 
 	out := &bytes.Buffer{}
-	err := Apply(context.Background(), cl, "from-cli", []string{writeManifest(t, manifest)}, out)
+	err := Apply(context.Background(), cl, "from-cli", []string{writeManifest(t, manifest)}, out, io.Discard)
 	if err != nil {
 		t.Fatalf("Apply returned error: %v", err)
 	}
@@ -132,10 +137,10 @@ spec:
 
 	ctrl := gomock.NewController(t)
 	cl := mockapply.NewMockApplyClient(ctrl)
-	cl.EXPECT().ClearTargetDeviations(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	cl.EXPECT().ClearTargetDeviations(gomock.Any(), gomock.Any()).Return(nil, nil).Times(2)
 
 	out := &bytes.Buffer{}
-	err := Apply(context.Background(), cl, "default", []string{writeManifest(t, manifest)}, out)
+	err := Apply(context.Background(), cl, "default", []string{writeManifest(t, manifest)}, out, io.Discard)
 	if err != nil {
 		t.Fatalf("Apply returned error: %v", err)
 	}
@@ -154,7 +159,7 @@ metadata:
 	cl := mockapply.NewMockApplyClient(ctrl)
 
 	out := &bytes.Buffer{}
-	err := Apply(context.Background(), cl, "default", []string{writeManifest(t, manifest)}, out)
+	err := Apply(context.Background(), cl, "default", []string{writeManifest(t, manifest)}, out, io.Discard)
 	if err == nil {
 		t.Fatal("expected error for unsupported kind, got nil")
 	}
@@ -180,14 +185,47 @@ spec:
 	ctrl := gomock.NewController(t)
 	cl := mockapply.NewMockApplyClient(ctrl)
 	wantErr := errors.New("backend failed")
-	cl.EXPECT().ClearTargetDeviations(gomock.Any(), gomock.Any()).Return(wantErr)
+	cl.EXPECT().ClearTargetDeviations(gomock.Any(), gomock.Any()).Return(nil, wantErr)
 
 	out := &bytes.Buffer{}
-	err := Apply(context.Background(), cl, "default", []string{writeManifest(t, manifest)}, out)
+	err := Apply(context.Background(), cl, "default", []string{writeManifest(t, manifest)}, out, io.Discard)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
 	if !strings.Contains(err.Error(), wantErr.Error()) {
 		t.Fatalf("expected propagated client error, got %v", err)
+	}
+}
+
+func TestApply_ForwardsServerWarnings(t *testing.T) {
+	t.Parallel()
+
+	manifest := `apiVersion: config.sdcio.dev/v1alpha1
+kind: TargetClearDeviation
+metadata:
+  name: srl1
+spec:
+  config:
+    - name: intent-a
+      paths:
+        - /system/name
+`
+
+	ctrl := gomock.NewController(t)
+	cl := mockapply.NewMockApplyClient(ctrl)
+	cl.EXPECT().
+		ClearTargetDeviations(gomock.Any(), gomock.Any()).
+		Return([]string{"intent-a: path already at desired value"}, nil)
+
+	out := &bytes.Buffer{}
+	errOut := &bytes.Buffer{}
+	if err := Apply(context.Background(), cl, "default", []string{writeManifest(t, manifest)}, out, errOut); err != nil {
+		t.Fatalf("Apply returned error: %v", err)
+	}
+	if !strings.Contains(errOut.String(), "Warning: intent-a: path already at desired value") {
+		t.Fatalf("expected warning on errOut, got %q", errOut.String())
+	}
+	if strings.Contains(out.String(), "Warning") {
+		t.Fatalf("warning leaked to stdout: %q", out.String())
 	}
 }

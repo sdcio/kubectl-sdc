@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -29,7 +30,7 @@ var (
 type DeviationClient interface {
 	GetDeviationByName(ctx context.Context, namespace string, deviationName string) (*types.IntentDeviations, error)
 	GetDeviationsByTarget(ctx context.Context, namespace string, targetName string) (types.Deviations, error)
-	ClearTargetDeviations(ctx context.Context, resource *v1alpha1.TargetClearDeviation) error
+	ClearTargetDeviations(ctx context.Context, resource *v1alpha1.TargetClearDeviation) ([]string, error)
 }
 
 // reasonInitial returns the first uppercase character of the reason in brackets
@@ -173,8 +174,10 @@ func selectDeviationsInteractive(deviations types.DeviationSlice, allDeviations 
 	return deviations.FilterByIndexes(idxs), nil
 }
 
-// Run executes the deviation selection and returns the selected deviations
-func Run(ctx context.Context, cl DeviationClient, do *DeviationOptions) (types.Deviations, error) {
+// Run executes the deviation selection and returns the selected deviations.
+// Server-side warnings emitted by a revert are written to warnOut, which
+// may be nil to discard them.
+func Run(ctx context.Context, cl DeviationClient, do *DeviationOptions, warnOut io.Writer) (types.Deviations, error) {
 	var err error
 	devs, err := loadDeviations(ctx, cl, do)
 	if err != nil {
@@ -203,16 +206,23 @@ func Run(ctx context.Context, cl DeviationClient, do *DeviationOptions) (types.D
 	}
 
 	if do.Revert() && selectedDeviations.HasDeviations() {
-		return nil, revert(ctx, cl, do.namespace, selectedDeviations.First().Target(), selectedDeviations)
+		warnings, revertErr := revert(ctx, cl, do.namespace, selectedDeviations.First().Target(), selectedDeviations)
+		if warnOut != nil {
+			for _, w := range warnings {
+				_, _ = fmt.Fprintf(warnOut, "Warning: %s\n", w)
+			}
+		}
+		return nil, revertErr
 	}
 
 	return selectedDeviations, nil
 }
 
-// revert clears the specified paths on a target
-func revert(ctx context.Context, cl DeviationClient, namespace, targetName string, devs types.Deviations) error {
+// revert clears the specified paths on a target and returns any
+// non-fatal warnings the server attached to the response.
+func revert(ctx context.Context, cl DeviationClient, namespace, targetName string, devs types.Deviations) ([]string, error) {
 	if !devs.HasDeviations() {
-		return fmt.Errorf("no deviations provided to clear")
+		return nil, fmt.Errorf("no deviations provided to clear")
 	}
 
 	return cl.ClearTargetDeviations(ctx, client.NewTargetClearDeviation(namespace, targetName, devs))

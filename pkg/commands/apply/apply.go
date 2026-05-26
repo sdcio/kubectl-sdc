@@ -15,12 +15,13 @@ import (
 
 // ApplyClient defines the interface for apply operations.
 type ApplyClient interface {
-	ClearTargetDeviations(ctx context.Context, resource *v1alpha1.TargetClearDeviation) error
+	ClearTargetDeviations(ctx context.Context, resource *v1alpha1.TargetClearDeviation) ([]string, error)
 }
 
 // Apply reads each file (or stdin when path is "-"), decodes all YAML/JSON
 // documents inside, and applies each one via the appropriate client method.
-func Apply(ctx context.Context, cl ApplyClient, namespace string, filePaths []string, out io.Writer) error {
+// Server-side warnings are written to errOut, which may be nil to discard them.
+func Apply(ctx context.Context, cl ApplyClient, namespace string, filePaths []string, out, errOut io.Writer) error {
 	for _, filePath := range filePaths {
 		var data []byte
 		var err error
@@ -33,7 +34,7 @@ func Apply(ctx context.Context, cl ApplyClient, namespace string, filePaths []st
 			return fmt.Errorf("reading %s: %w", filePath, err)
 		}
 
-		if err := applyDocuments(ctx, cl, namespace, data, out); err != nil {
+		if err := applyDocuments(ctx, cl, namespace, data, out, errOut); err != nil {
 			return fmt.Errorf("%s: %w", filePath, err)
 		}
 	}
@@ -41,7 +42,7 @@ func Apply(ctx context.Context, cl ApplyClient, namespace string, filePaths []st
 }
 
 // applyDocuments handles multi-document YAML/JSON files.
-func applyDocuments(ctx context.Context, cl ApplyClient, namespace string, data []byte, out io.Writer) error {
+func applyDocuments(ctx context.Context, cl ApplyClient, namespace string, data []byte, out, errOut io.Writer) error {
 	decoder := k8syaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 4096)
 	for {
 		var raw json.RawMessage
@@ -57,23 +58,23 @@ func applyDocuments(ctx context.Context, cl ApplyClient, namespace string, data 
 			return fmt.Errorf("reading type metadata: %w", err)
 		}
 
-		if err := applyResource(ctx, cl, namespace, tm.Kind, raw, out); err != nil {
+		if err := applyResource(ctx, cl, namespace, tm.Kind, raw, out, errOut); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func applyResource(ctx context.Context, cl ApplyClient, namespace string, kind string, raw json.RawMessage, out io.Writer) error {
+func applyResource(ctx context.Context, cl ApplyClient, namespace string, kind string, raw json.RawMessage, out, errOut io.Writer) error {
 	switch kind {
 	case v1alpha1.TargetClearDeviationKind:
-		return applyTargetClearDeviation(ctx, cl, namespace, raw, out)
+		return applyTargetClearDeviation(ctx, cl, namespace, raw, out, errOut)
 	default:
 		return fmt.Errorf("unsupported kind %q", kind)
 	}
 }
 
-func applyTargetClearDeviation(ctx context.Context, cl ApplyClient, namespace string, raw json.RawMessage, out io.Writer) error {
+func applyTargetClearDeviation(ctx context.Context, cl ApplyClient, namespace string, raw json.RawMessage, out, errOut io.Writer) error {
 	var resource v1alpha1.TargetClearDeviation
 	if err := json.Unmarshal(raw, &resource); err != nil {
 		return fmt.Errorf("decoding TargetClearDeviation: %w", err)
@@ -84,7 +85,13 @@ func applyTargetClearDeviation(ctx context.Context, cl ApplyClient, namespace st
 		resource.Namespace = namespace
 	}
 
-	if err := cl.ClearTargetDeviations(ctx, &resource); err != nil {
+	warnings, err := cl.ClearTargetDeviations(ctx, &resource)
+	if errOut != nil {
+		for _, w := range warnings {
+			_, _ = fmt.Fprintf(errOut, "Warning: %s\n", w)
+		}
+	}
+	if err != nil {
 		return err
 	}
 

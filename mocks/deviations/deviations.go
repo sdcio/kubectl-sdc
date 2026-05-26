@@ -43,11 +43,12 @@ func (m *MockDeviationClient) EXPECT() *MockDeviationClientMockRecorder {
 }
 
 // ClearTargetDeviations mocks base method.
-func (m *MockDeviationClient) ClearTargetDeviations(ctx context.Context, resource *v1alpha1.TargetClearDeviation) error {
+func (m *MockDeviationClient) ClearTargetDeviations(ctx context.Context, resource *v1alpha1.TargetClearDeviation) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearTargetDeviations", ctx, resource)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ClearTargetDeviations indicates an expected call of ClearTargetDeviations.
