@@ -7,7 +7,7 @@ go 1.25.0
 require (
 	github.com/beevik/etree v1.6.0
 	github.com/fatih/color v1.19.0
-	github.com/sdcio/config-server v0.0.56
+	github.com/sdcio/config-server v0.0.57
 	github.com/sdcio/sdc-protos v0.0.54
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
@@ -73,7 +73,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect
 	github.com/henderiw/apiserver-builder v0.0.8 // indirect
-	github.com/henderiw/apiserver-store v0.0.4 // indirect
+	github.com/henderiw/apiserver-store v0.0.5 // indirect
 	github.com/henderiw/iputil v0.0.0-20231218081610-37f78ad9c81c // indirect
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
