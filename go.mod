@@ -5,7 +5,7 @@ module github.com/sdcio/kubectl-sdc
 go 1.25.0
 
 require (
-	github.com/beevik/etree v1.6.0
+	github.com/beevik/etree v1.7.0
 	github.com/fatih/color v1.19.0
 	github.com/sdcio/config-server v0.0.57
 	github.com/sdcio/sdc-protos v0.0.54
