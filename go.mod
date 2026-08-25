@@ -5,16 +5,16 @@ module github.com/sdcio/kubectl-sdc
 go 1.25.0
 
 require (
-	github.com/beevik/etree v1.7.0
+	github.com/beevik/etree v1.7.1
 	github.com/fatih/color v1.19.0
-	github.com/sdcio/config-server v0.0.57
-	github.com/sdcio/sdc-protos v0.0.54
+	github.com/sdcio/config-server v0.0.58
+	github.com/sdcio/sdc-protos v0.0.55
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/steiler/go-fuzzyfinder v0.4.0
 	go.uber.org/mock v0.6.0
-	google.golang.org/grpc v1.83.0
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/grpc v1.83.1
+	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.35.4
 	k8s.io/apimachinery v0.35.4
@@ -129,7 +129,7 @@ require (
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
