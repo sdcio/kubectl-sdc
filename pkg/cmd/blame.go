@@ -112,6 +112,9 @@ func (o *BlameOptions) Validate() error {
 	if o.namespace == "" {
 		return fmt.Errorf("namespace not set")
 	}
+	if o.interactive && !strings.EqualFold(o.format, string(blame.BlameFormatXPath)) {
+		return fmt.Errorf("--interactive requires --format %s", blame.BlameFormatXPath)
+	}
 	return nil
 }
 

@@ -15,8 +15,25 @@ func TestBlameOptionsValidate(t *testing.T) {
 		name      string
 		target    string
 		namespace string
+		format    string
+		interact  bool
 		wantErr   string
 	}{
+		{
+			name:      "interactive requires xpath format",
+			target:    "target-1",
+			namespace: "default",
+			format:    "tree",
+			interact:  true,
+			wantErr:   "--interactive requires --format xpath",
+		},
+		{
+			name:      "interactive with xpath format",
+			target:    "target-1",
+			namespace: "default",
+			format:    "xpath",
+			interact:  true,
+		},
 		{
 			name:      "requires target",
 			namespace: "default",
@@ -37,7 +54,9 @@ func TestBlameOptionsValidate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := &BlameOptions{
-				target: tt.target,
+				target:      tt.target,
+				format:      tt.format,
+				interactive: tt.interact,
 				GenericOptions: GenericOptions{
 					namespace: tt.namespace,
 				},
