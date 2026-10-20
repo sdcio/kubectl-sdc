@@ -43,10 +43,14 @@ This method installs only `kubectl-sdc`. If you want kubectl completion support 
 kubectl-sdc provides the following subcommands.
 
 ### blame
-The blame command provides a tree-based view of the actual running device configuration for the given SDC target.
+The blame command shows the actual running device configuration for the given SDC target, annotated with the owner of every value. It supports two output formats:
+- `tree` (default): a tree view of the configuration.
+- `xpath`: one line per leaf, with the full XPath of the leaf.
 
 It takes the `--target` parameter, which defines which target is displayed.
-The `--format` parameter supports `tree` (default) and `xpath`; with `--format=xpath`, the `--interactive` flag opens a fuzzyfinder with multi-select (`Tab` to select) and prints the selected XPath lines.
+The `--format` parameter selects the output format.
+
+The `--interactive` flag is only available with `--format=xpath` (using it with another format is an error). Instead of printing every line, it opens a fuzzy finder over the XPath lines. Select lines with `Tab` (multi-select), confirm with `Enter`, and only the selected lines are printed. Aborting with `Esc` or `Ctrl+C` prints nothing. It does not change anything on the target; it is meant for picking paths to copy, for example for `--filter-path`.
 
 For every configured attribute you will see the highest preference value as well as the source of that value.
 - `running` are attributes that come from the device itself, where no intent exists in SDC.
@@ -70,6 +74,16 @@ running    │     │                   └── 🍃 admin-state -> enable
   -----    │                 └── 🔑 name=SNMPv2-RO-Community
 default    │                     └── 🍃 admin-state -> enable
 ```
+
+The same query with `--format xpath` prints one line per leaf. The owner is shown in brackets, followed by the leaf's XPath and its value:
+```
+kubectl sdc blame --target srl1 --filter-owner running --format xpath --filter-path /interface[name=mgmt0]/subinterface --filter-path /system/snmp/access-group[name=SNMPv2-RO-Community] --filter-owner default --filter-leaf admin*
+  [ running ] /interface[name=mgmt0]/subinterface[index=0]/admin-state -> enable
+  [ running ] /interface[name=mgmt0]/subinterface[index=0]/ipv4/admin-state -> enable
+  [ running ] /interface[name=mgmt0]/subinterface[index=0]/ipv6/admin-state -> enable
+  [ default ] /system/snmp/access-group[name=SNMPv2-RO-Community]/admin-state -> enable
+```
+A line starting with `D` marks a leaf whose actual value differs from the intended one; the intended value is shown after `[~>`. See the [deviation](#deviation) command for working with deviations.
 
 #### Filtering Options
 
